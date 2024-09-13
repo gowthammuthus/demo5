@@ -1,47 +1,31 @@
-import pytest
-from app import app
+name: Run Tests on Push to session-1 and Pull Request to main
 
-@pytest.fixture
-def client():
-    with app.test_client() as client:
-        yield client
+on:
+  push:
+    branches:
+      - session-1
+  pull_request:
+    branches:
+      - main
 
-# Home route test
-def test_home(client):
-    response = client.get('/')
-    assert response.status_code == 200
-    assert response.json == {'version': '1.0'}
+jobs:
+  test:
+    runs-on: ubuntu-latest
 
-# Fahrenheit to Celsius
-@pytest.mark.parametrize("temp, expected", [(212, 100.0), (32, 0.0), (-40, -40.0)])
-def test_convert_temp_f_to_c(client, temp, expected):
-    response = client.get(f'/convert-temp?temp={temp}&scale=fahrenheit&target_scale=celsius')
-    assert response.status_code == 200
-    assert response.json['converted_temp'] == pytest.approx(expected, rel=1e-2)
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-# Celsius to Fahrenheit
-@pytest.mark.parametrize("temp, expected", [(100, 212.0), (0, 32.0), (-40, -40.0)])
-def test_convert_temp_c_to_f(client, temp, expected):
-    response = client.get(f'/convert-temp?temp={temp}&scale=celsius&target_scale=fahrenheit')
-    assert response.status_code == 200
-    assert response.json['converted_temp'] == pytest.approx(expected, rel=1e-2)
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'  # Specify the Python version you want to use
 
-# Kelvin to Celsius
-@pytest.mark.parametrize("temp, expected", [(273.15, 0.0), (373.15, 100.0), (233.15, -40.0)])
-def test_convert_temp_k_to_c(client, temp, expected):
-    response = client.get(f'/convert-temp?temp={temp}&scale=kelvin&target_scale=celsius')
-    assert response.status_code == 200
-    assert response.json['converted_temp'] == pytest.approx(expected, rel=1e-2)
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-# Kelvin to Fahrenheit
-@pytest.mark.parametrize("temp, expected", [(273.15, 32.0), (373.15, 212.0), (233.15, -40.0)])
-def test_convert_temp_k_to_f(client, temp, expected):
-    response = client.get(f'/convert-temp?temp={temp}&scale=kelvin&target_scale=fahrenheit')
-    assert response.status_code == 200
-    assert response.json['converted_temp'] == pytest.approx(expected, rel=1e-2)
-
-# Invalid scale handling
-def test_convert_temp_invalid_scale(client):
-    response = client.get('/convert-temp?temp=100&scale=unknown&target_scale=celsius')
-    assert response.status_code == 400
-    assert 'error' in response.json
+      - name: Run tests
+        run: |
+          pytest --maxfail=1 --disable-warnings

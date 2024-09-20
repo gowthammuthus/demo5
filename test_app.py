@@ -3,7 +3,7 @@ name: Run Tests on Push to session-2 and Pull Request to main
 on:
   push:
     branches:
-      - session-1
+      - session-2
   pull_request:
     branches:
       - main

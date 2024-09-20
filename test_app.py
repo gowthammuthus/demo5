@@ -1,4 +1,4 @@
-name: Run Tests on Push to session-1 and Pull Request to main
+name: Run Tests on Push to session-2 and Pull Request to main
 
 on:
   push:
